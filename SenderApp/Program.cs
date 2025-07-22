@@ -16,7 +16,10 @@ await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct);
 await channel.QueueDeclareAsync(queueName, false, false, false, null);
 await channel.QueueBindAsync(queueName, exchangeName, routingKey, null);
 
-byte[] messageBodyBytes = Encoding.UTF8.GetBytes("Hello, world!");
+Console.Write("Enter Name: ");
+string? nameInput = Console.ReadLine();
+
+byte[] messageBodyBytes = Encoding.UTF8.GetBytes($"Hello my name is, {nameInput}");
 var props = new BasicProperties();
 await channel.BasicPublishAsync(exchangeName, routingKey, false, props, messageBodyBytes);
 

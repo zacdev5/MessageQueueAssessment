@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SenderApp", "SenderApp\Send
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReceiverApp", "ReceiverApp\ReceiverApp.csproj", "{B3FB15D5-A28C-4677-892F-1602D94AE0F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessagingConsoleLib", "MessagingConsoleLib\MessagingConsoleLib.csproj", "{2FA791FA-200E-42DB-8ADD-61E3AD3DA508}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{B3FB15D5-A28C-4677-892F-1602D94AE0F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B3FB15D5-A28C-4677-892F-1602D94AE0F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B3FB15D5-A28C-4677-892F-1602D94AE0F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FA791FA-200E-42DB-8ADD-61E3AD3DA508}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FA791FA-200E-42DB-8ADD-61E3AD3DA508}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FA791FA-200E-42DB-8ADD-61E3AD3DA508}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FA791FA-200E-42DB-8ADD-61E3AD3DA508}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

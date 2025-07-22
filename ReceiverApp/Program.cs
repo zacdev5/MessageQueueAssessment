@@ -24,7 +24,8 @@ consumer.ReceivedAsync += async (ch, ea) =>
     byte[] body = ea.Body.ToArray();
 
     string receivedMessage = Encoding.UTF8.GetString(body);
-    Console.WriteLine(receivedMessage);
+    string receivedName = receivedMessage.Substring(18);
+    Console.WriteLine($"Hello {receivedName}, I am your father!");
 
     await channel.BasicAckAsync(ea.DeliveryTag, false);
 };
