@@ -1,42 +1,30 @@
-﻿using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using System.Text;
+﻿using MessagingConsoleLib.ConsoleLogic;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using ReceiverApp;
 
-ConnectionFactory factory = new ConnectionFactory();
+using IHost host = CreateHostBuilder(args).Build();
+using var scope = host.Services.CreateScope();
 
-factory.Uri = new Uri("amqp://guest:guest@localhost:5672");
-
-IConnection conn = await factory.CreateConnectionAsync();
-IChannel channel = await conn.CreateChannelAsync();
-
-string exchangeName = "DemoExchange";
-string routingKey = "demo-routing-key";
-string queueName = "DemoQueue";
-
-await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct);
-await channel.QueueDeclareAsync(queueName, false, false, false, null);
-await channel.QueueBindAsync(queueName, exchangeName, routingKey, null);
+var services = scope.ServiceProvider;
 
 
-var consumer = new AsyncEventingBasicConsumer(channel);
-consumer.ReceivedAsync += async (ch, ea) =>
+// Prevents app from 'violently' crashing
+try
 {
-    byte[] body = ea.Body.ToArray();
+    await services.GetRequiredService<App>().Run(args);
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex.Message);
+}
 
-    string receivedMessage = Encoding.UTF8.GetString(body);
-    string receivedName = receivedMessage.Substring(18);
-    Console.WriteLine($"Hello {receivedName}, I am your father!");
-
-    await channel.BasicAckAsync(ea.DeliveryTag, false);
-};
-string consumerTag = await channel.BasicConsumeAsync(queueName, false, consumer);
-
-Console.ReadLine();
-
-await channel.BasicCancelAsync(consumerTag);
-
-await channel.CloseAsync();
-await conn.CloseAsync();
-
-await channel.DisposeAsync();
-await conn.DisposeAsync();
+static IHostBuilder CreateHostBuilder(string[] args)
+{
+    return Host.CreateDefaultBuilder(args)
+        .ConfigureServices((_, services) =>
+        {
+            services.AddSingleton<IConsoleService, ConsoleService>();
+            services.AddSingleton<App>();
+        });
+}

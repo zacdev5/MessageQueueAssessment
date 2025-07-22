@@ -1,30 +1,30 @@
-﻿using RabbitMQ.Client;
-using System.Text;
+﻿using MessagingConsoleLib.ConsoleLogic;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using SenderApp;
 
-ConnectionFactory factory = new ConnectionFactory();
+using IHost host = CreateHostBuilder(args).Build();
+using var scope = host.Services.CreateScope();
 
-factory.Uri = new Uri("amqp://guest:guest@localhost:5672");
+var services = scope.ServiceProvider;
 
-IConnection conn = await factory.CreateConnectionAsync();
-IChannel channel = await conn.CreateChannelAsync();
 
-string exchangeName = "DemoExchange";
-string routingKey = "demo-routing-key";
-string queueName = "DemoQueue";
+// Prevents app from 'violently' crashing
+try
+{
+    await services.GetRequiredService<App>().Run(args);
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex.Message);
+}
 
-await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct);
-await channel.QueueDeclareAsync(queueName, false, false, false, null);
-await channel.QueueBindAsync(queueName, exchangeName, routingKey, null);
-
-Console.Write("Enter Name: ");
-string? nameInput = Console.ReadLine();
-
-byte[] messageBodyBytes = Encoding.UTF8.GetBytes($"Hello my name is, {nameInput}");
-var props = new BasicProperties();
-await channel.BasicPublishAsync(exchangeName, routingKey, false, props, messageBodyBytes);
-
-await channel.CloseAsync();
-await conn.CloseAsync();
-
-await channel.DisposeAsync();
-await conn.DisposeAsync();
+static IHostBuilder CreateHostBuilder(string[] args)
+{
+    return Host.CreateDefaultBuilder(args)
+        .ConfigureServices((_, services) =>
+        {
+            services.AddSingleton<IConsoleService, ConsoleService>();
+            services.AddSingleton<App>();
+        });
+}
