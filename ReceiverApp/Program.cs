@@ -1,17 +1,18 @@
 ﻿using MessagingConsoleLib.ConsoleLogic;
+using MessagingConsoleLib.MessageLogic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReceiverApp;
 
 using IHost host = CreateHostBuilder(args).Build();
-using var scope = host.Services.CreateScope();
-
-var services = scope.ServiceProvider;
-
+await host.StartAsync();
 
 // Prevents app from 'violently' crashing
 try
 {
+    using var scope = host.Services.CreateScope();
+    var services = scope.ServiceProvider;
+
     await services.GetRequiredService<App>().Run(args);
 }
 catch (Exception ex)
@@ -26,5 +27,8 @@ static IHostBuilder CreateHostBuilder(string[] args)
         {
             services.AddSingleton<IConsoleService, ConsoleService>();
             services.AddSingleton<App>();
+            services.AddSingleton<MessageService>(); // Register concrete first
+            services.AddSingleton<IMessageService>(sp => sp.GetRequiredService<MessageService>()); // Map interfaces to same instance
+            services.AddHostedService(sp => sp.GetRequiredService<MessageService>()); // Register as hosted service
         });
 }
