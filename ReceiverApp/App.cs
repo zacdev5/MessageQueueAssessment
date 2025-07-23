@@ -18,6 +18,18 @@ public class App
     // Runs the main logic: consume message and log output
     public async Task Run(string[] args)
     {
+        // Listens for messages
+        await RunMessageHandler();
+
+        // Inform user that the receiver is running
+        _consoleService.WriteMessage("Receiver is running. Press Enter to exit...");
+
+        // Keep the console window open until Enter is pressed
+        Console.ReadLine();
+    }
+
+    public async Task RunMessageHandler()
+    {
         // Start listening for messages from RabbitMQ
         await _messageService.ReceiveMessageAsync(async message =>
         {
@@ -30,11 +42,5 @@ public class App
 
             await Task.CompletedTask;
         });
-
-        // Inform user that the receiver is running
-        _consoleService.WriteMessage("Receiver is running. Press Enter to exit...");
-
-        // Keep the console window open until Enter is pressed
-        Console.ReadLine();
     }
 }
