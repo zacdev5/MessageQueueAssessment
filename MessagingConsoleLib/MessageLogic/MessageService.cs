@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using MessagingConsoleLib.Configurations;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -7,24 +9,33 @@ namespace MessagingConsoleLib.MessageLogic;
 
 public class MessageService : IHostedService, IAsyncDisposable, IMessageService
 {
+    private readonly RabbitMQSettings _settings;
     private IConnection? _connection;
     private IChannel? _channel;
-    private readonly string _exchangeName = "DemoExchange";
-    private readonly string _routingKey = "demo-routing-key";
-    private readonly string _queueName = "DemoQueue";
-    private readonly string _rabbitMQConn = "amqp://guest:guest@localhost:5672";
+
+    public MessageService(IOptions<RabbitMQSettings> settings)
+    {
+        _settings = settings.Value;
+    }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var factory = new ConnectionFactory();
-        factory.Uri = new Uri(_rabbitMQConn);
+        factory.Uri = new Uri(_settings.Uri);
 
-        _connection = await factory.CreateConnectionAsync();
-        _channel = await _connection.CreateChannelAsync();
+        try
+        {
+            _connection = await factory.CreateConnectionAsync();
+            _channel = await _connection.CreateChannelAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException("RabbitMQ broker is unreachable.", ex);
+        }
 
-        await _channel.ExchangeDeclareAsync(_exchangeName, ExchangeType.Direct);
-        await _channel.QueueDeclareAsync(_queueName, false, false, false, null);
-        await _channel.QueueBindAsync(_queueName, _exchangeName, _routingKey, null);
+        await _channel.ExchangeDeclareAsync(_settings.ExchangeName, ExchangeType.Direct);
+        await _channel.QueueDeclareAsync(_settings.QueueName, false, false, false, null);
+        await _channel.QueueBindAsync(_settings.QueueName, _settings.ExchangeName, _settings.RoutingKey, null);
     }
 
     public async Task SendMessageAsync(string msg)
@@ -36,11 +47,16 @@ public class MessageService : IHostedService, IAsyncDisposable, IMessageService
 
         byte[] msgBodyBytes = Encoding.UTF8.GetBytes(msg);
         var props = new BasicProperties();
-        await _channel.BasicPublishAsync(_exchangeName, _routingKey, false, props, msgBodyBytes);
+        await _channel.BasicPublishAsync(_settings.ExchangeName, _settings.RoutingKey, false, props, msgBodyBytes);
     }
 
     public async Task ReceiveMessageAsync(Func<string, Task> handleMessageAsync)
     {
+        if (_channel == null)
+        {
+            throw new InvalidOperationException("Channel is not initialized.");
+        }
+
         var consumer = new AsyncEventingBasicConsumer(_channel);
 
         consumer.ReceivedAsync += async (ch, ea) =>
@@ -55,7 +71,7 @@ public class MessageService : IHostedService, IAsyncDisposable, IMessageService
             await _channel.BasicAckAsync(ea.DeliveryTag, false);
         };
 
-        string consumerTag = await _channel.BasicConsumeAsync(_queueName, false, consumer);
+        string consumerTag = await _channel.BasicConsumeAsync(_settings.QueueName, false, consumer);
 
         await _channel.BasicCancelAsync(consumerTag);
     }
