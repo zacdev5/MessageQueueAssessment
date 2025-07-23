@@ -2,6 +2,7 @@
 
 public class ConsoleService : IConsoleService
 {
+    // Prompt the user for their name with validation
     public Task<string> PromptForNameAsync()
     {
         Console.Write("Enter Name: ");
@@ -16,6 +17,7 @@ public class ConsoleService : IConsoleService
         return Task.FromResult(input);
     }
 
+    // Print a message to the console (kind of redundant but gives more logic for injection)
     public void WriteMessage(string message)
     {
         Console.WriteLine(message);

@@ -13,16 +13,19 @@ public class MessageService : IHostedService, IAsyncDisposable, IMessageService
     private IConnection? _connection;
     private IChannel? _channel;
 
+    // Load settings
     public MessageService(IOptions<RabbitMQSettings> settings)
     {
         _settings = settings.Value;
     }
 
+    // Triggered when app starts
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var factory = new ConnectionFactory();
         factory.Uri = new Uri(_settings.Uri);
 
+        // Create RabbitMQ connection and channel
         try
         {
             _connection = await factory.CreateConnectionAsync();
@@ -33,11 +36,13 @@ public class MessageService : IHostedService, IAsyncDisposable, IMessageService
             throw new ApplicationException("RabbitMQ broker is unreachable.", ex);
         }
 
+        // Declare exchange, queue, and bind routing key
         await _channel.ExchangeDeclareAsync(_settings.ExchangeName, ExchangeType.Direct);
         await _channel.QueueDeclareAsync(_settings.QueueName, false, false, false, null);
         await _channel.QueueBindAsync(_settings.QueueName, _settings.ExchangeName, _settings.RoutingKey, null);
     }
 
+    // Publishes UTF-8 encoded message to RabbitMQ
     public async Task SendMessageAsync(string msg)
     {
         if (_channel == null)
@@ -50,6 +55,7 @@ public class MessageService : IHostedService, IAsyncDisposable, IMessageService
         await _channel.BasicPublishAsync(_settings.ExchangeName, _settings.RoutingKey, false, props, msgBodyBytes);
     }
 
+    // Consumes messages and processes them with the provided handler (handleMessageAsync)
     public async Task ReceiveMessageAsync(Func<string, Task> handleMessageAsync)
     {
         if (_channel == null)
@@ -76,11 +82,13 @@ public class MessageService : IHostedService, IAsyncDisposable, IMessageService
         await _channel.BasicCancelAsync(consumerTag);
     }
 
+    // Clean shutdown logic (currently no-op)
     public Task StopAsync(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
 
+    // Disposes and closes RabbitMQ resources safely
     public async ValueTask DisposeAsync()
     {
         if (_channel?.IsOpen == true)
