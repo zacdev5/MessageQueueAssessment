@@ -38,6 +38,9 @@ static IHostBuilder CreateHostBuilder(string[] args)
         {
             // Load settings from appsettings.json
             config.AddJsonFile("appsettings.json", false, true);
+
+            //Enable environment variables override
+            config.AddEnvironmentVariables();
         })
         .ConfigureServices((_, services) =>
         {

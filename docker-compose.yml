@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management 
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  senderapp:
+    build:
+      context: .
+      dockerfile: SenderApp/Dockerfile
+    container_name: senderapp
+    depends_on:
+      - rabbitmq
+    environment:
+      - RabbitMQ__Uri=amqp://guest:guest@rabbitmq:5672
+    stdin_open: true
+    tty: true
+    # Do not auto-run this container unless explicitly started
+    restart: "no"
+    # Idle until user runs manually
+    entrypoint: [ "sh", "-c", "while true; do sleep 1000; done" ]
+
+  receiverapp:
+    build:
+      context: .
+      dockerfile: ReceiverApp/Dockerfile
+    container_name: receiverapp
+    depends_on:
+      - rabbitmq
+    environment:
+      - RabbitMQ__Uri=amqp://guest:guest@rabbitmq:5672
+    # Do not auto-run this container unless explicitly started
+    restart: "no"
+    # Idle until user runs manually
+    entrypoint: [ "sh", "-c", "while true; do sleep 1000; done" ]
